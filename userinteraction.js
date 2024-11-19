@@ -301,26 +301,26 @@ const submitDetails = async (chatId, messageId) => {
     const time = new Date().toLocaleDateString();
     const date_time = `${date} ${time}`
 
-    userData = {
-      ...userData,
-      cer_uid: await UniqueId(userData.certificate, userData.mobile),
+    userInputData = {
+      ...userInputData,
+      cer_uid: await UniqueId(userInputData.certificate, userInputData.mobile),
       agentDetails: agentData,
       time: date_time,
       type: 'submitted_bot'
     }
 
-    setSession(chatId, userData);
-    console.log(userData);
-    const wa_link =chatOnWA(userData)
+    setSession(chatId, userInputData);
+    console.log(userInputData);
+    const wa_link =chatOnWA(userInputData)
 
     const sucMsg = `
-*Congrats, your application for ${userData.certificate} has been submitted successfully*.
+*Congrats, your application for ${userInputData.certificate} has been submitted successfully*.
 
-*Application Id:* ${userData.cer_uid}
+*Application Id:* ${userInputData.cer_uid}
 
 *Customer Support Agent Details*
-*Name:* ${userData.agentDetails.sa_name}
-*Mobile:* ${userData.agentDetails.sa_contact}
+*Name:* ${userInputData.agentDetails.sa_name}
+*Mobile:* ${userInputData.agentDetails.sa_contact}
 
 Our customer support agent will contact you soon 🤙
 Have a great day 😊

@@ -1,26 +1,41 @@
 //Firestore
 const admin = require('firebase-admin');
 const axios = require('axios');
+require('dotenv').config()
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
 const db = admin.firestore();
+const sheetID = process.env.deployment_ID
 
 const {certificatesCache, servicesCache} = require('./cache');
 const {sendMessage, editMessage} = require('./message')
 
-const sendToServer = async (endpoint, payload) => {
+const sendDataToSheet = async (dataToSend) => {
   try {
-    await axios.post(`https://esevai-server.onrender.com/${endpoint}`, payload, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.post(
+      `https://script.google.com/macros/s/${sheetID}/exec?dev=true`, 
+      dataToSend, // Send `dataToSend` as the body
+      {
+        headers: {
+          'Content-Type': 'application/json', // Specify content type
+        },
+      }
+    );
+
+    console.log(response)
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    console.log("Data sent successfully to the sheet!");
   } catch (error) {
-    console.error("Error sending data to server:", error);
+    console.error("Error sending data to sheet:", error);
   }
 };
+
 
 const fetchCertificates = async (collection) => {
     try {
@@ -163,5 +178,5 @@ ${fee}
     sendReqDocsandFee,
     fetchCertificates,
     fetchAgentData,
-    sendToServer
+    sendDataToSheet
  }

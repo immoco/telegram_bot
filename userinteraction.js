@@ -1,7 +1,7 @@
 const axios = require('axios');
 const {sendMessage, editMessage, deleteMessage} = require('./message');
 const {getSession, setSession, deleteSession, certificatesCache, servicesCache} = require('./cache');
-const {fetchAgentData, sendToServer} = require('./databasefns');
+const {fetchAgentData, sendDataToSheet} = require('./databasefns');
 const {validateEmail, validateMobile} = require('./input_validation')
 
 const random_hash = ()=>{
@@ -203,7 +203,8 @@ const sendUrgencyOptions = async (chatId) => {
 const showConfirmation = async (chatId, urgent_status, messageId) => {
 try {
 
-    await editMessage (chatId, "*Your requirement is urgent*", messageId, '', 'Markdown' )
+  if (urgent_status) { await editMessage (chatId, "*Your requirement is urgent*", messageId, {inline_keyboard:[[]]}, 'Markdown' )}
+   
     let userInputData = getSession(chatId);
     userInputData = {
       ...userInputData,
@@ -254,16 +255,42 @@ catch(err){
 }
 
 const submitDetails = async (chatId, messageId) => {
+  await editMessage(chatId, msgText,messageId, removeInlineKeyboard, 'Markdown')
   const init = await sendMessage(chatId, '*Sending your application 🚀, it may take some time⌛*', '', 'Markdown')
-  let userData = getSession(chatId);
+  let userInputData = getSession(chatId);
   let msgText;
-  console.log(userData);
+  console.log(userInputData);
 
+  if (userInputData.urgent_state) {
+    msgText = `
+*Application Summary*
+    
+*Name:* ${userInputData.inputs[0]}
+*Email:* ${userInputData.inputs[1]}
+*Mobile:* ${userInputData.inputs[2]}
+    
+*${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
+*Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
+`
+  } else {
+    msgText = `
+*Application Summary*
+          
+*Name:* ${userInputData.inputs[0]}
+*Mobile:* ${userInputData.inputs[1]}
+*Email:* ${userInputData.inputs[2]}
+          
+*${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
+*Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
+*Preferred Date:* ${userInputData.preferredDate}
+*Preferred Time:* ${userInputData.preferredTime}
+`
+  }
   
     let agentData = await fetchAgentData();
     console.log(agentData)
     const removeInlineKeyboard = {
-      inline_keyboard: []  // Set an empty inline keyboard to remove buttons
+      inline_keyboard: [[]]  // Set an empty inline keyboard to remove buttons
     };
     
 
@@ -304,9 +331,8 @@ Have a great day 😊
     }
     
     await Promise.all([
-      await sendToServer('submitted', userData),
+      await sendDataToSheet(userData),
       await editMessage(chatId, sucMsg, init.message_id, reply_markup, 'Markdown'),
-      await editMessage(chatId, msgText,messageId, removeInlineKeyboard, 'Markdown')
  // Send user info to the server;
     ]);
       
@@ -316,7 +342,6 @@ Have a great day 😊
 
 
 module.exports = {
-    sendToServer,
     handleCancel, 
     handleProceed,
     handleUserInputs,

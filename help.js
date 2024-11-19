@@ -17,32 +17,29 @@ E-Sevai Genie, oru Telegram bot. Namma Genie use panni neenga entha certificates
 Ama. Genie thannoda users ku loyal ah irukkum. Unga personal details ellam unga permission illama engaiyum pogathu. Once, service mudinjathukku aprm unga details Genie store panni vachukaathu. Genie ungaluku thevai irukkura service mattum than senji kudukkum. Neenga ethana thadava naalum use pannikalam.`
   
 const english_msg = `
-*Meet E-Sevai Genie: Your Digital Assistant*
+*Meet E\\-Sevai Genie: Your Digital Assistant*
 
 *What Genie Does:*
-\`\`\`
-_Apply for Certificates_
-_Apply for Voter ID_
-_Aadhar Related Services_  
-\`\`\`
+
+\>*Apply for Certificates     *                     
+\>*Apply for Voter ID           *               
+\>*Aadhar Related Services       *                  
 
 *How to Order Genie:*
-\`\`\`
-_1. Type /start to launch Genie._
-_2. Select your desired service from the Menu._
-_3. Click "Proceed" after reviewing the required documents and fees._ 
-_4. Enter your details and book a time slot._ 
-_5. Genie will assign an agent to assist you and contact you via your provided phone number._
-\`\`\`
+
+\>*1\\. Type /start to launch Genie\\.*
+\>*2\\. Select your desired service from the Menu\\.*
+\>*3\\. Click "Proceed" after reviewing the required documents and fees\\.*
+\>*4\\. Enter your details and book a time slot\\. *
+\>*5\\. Genie will assign an agent to assist you and contact you via your provided phone number\\.  *
 
 *Why Trust Genie?*
-\`\`\`
-_Privacy: Your details are private and protected._
-_Communication: Clear and pre-defined conversation.*_  
-_Reliability: Always prioritizes your needs._
-\`\`\`
 
-*Get started with **E-Sevai Genie** and make your application process easy and efficient!*
+\>*Privacy\\: Your details are private and protected\\.*
+\>*Communication\\: Clear and pre\\-defined conversation\\.*
+\>*Reliability\\: Always prioritizes your needs\\. *
+
+*Get started with **E\\-Sevai Genie** and make your application process easy and efficient\\!*
 `
 
 const showHelp = async (chatId, callBackData) => {
@@ -50,7 +47,7 @@ const showHelp = async (chatId, callBackData) => {
       await sendMessage(chatId, tanglish_msg, '', 'Markdown');
     }
     else if (callBackData === "help_english"){
-        await sendMessage(chatId, english_msg, '', 'Markdown');
+        await sendMessage(chatId, english_msg, '', 'MarkdownV2');
     }
 }
 

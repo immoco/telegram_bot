@@ -10,7 +10,7 @@ const db = admin.firestore();
 const sheetID = process.env.deployment_ID
 
 const {certificatesCache, servicesCache} = require('./cache');
-const {sendMessage, editMessage} = require('./message')
+const {sendMessage, editMessage,botStatus} = require('./message')
 
 const sendDataToSheet = async (dataToSend) => {
   try {
@@ -25,10 +25,6 @@ const sendDataToSheet = async (dataToSend) => {
     );
 
     console.log(response)
-
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
 
     console.log("Data sent successfully to the sheet!");
   } catch (error) {
@@ -52,8 +48,9 @@ const fetchCertificates = async (collection) => {
   };
 
 const sendCertificatesMenu = async (chatId, callBackData) => {
-
-    const initialMessage = await sendMessage(chatId, "🔍 Fetching Services Details, this takes a few seconds ⌛")
+  
+    await botStatus(chatId, 'typing');
+    const initialMessage = await sendMessage(chatId, "Fetching Services Details, this takes a few seconds ⌛")
     let reply_markup;
     try {
         if (callBackData === 'tn_certificates'){
@@ -116,7 +113,7 @@ const sendCertificatesMenu = async (chatId, callBackData) => {
       }
 
       // Send a message with the inline keyboard
-      editMessage(chatId, "Choose an option from the list below.", initialMessage.message_id, reply_markup )
+      await editMessage(chatId, "*Choose an option from the list below.*", initialMessage.message_id, reply_markup,'Markdown' )
 
     } catch (error) {
       console.error("Error sending certificates menu:", error);
@@ -126,6 +123,7 @@ const sendCertificatesMenu = async (chatId, callBackData) => {
 const sendReqDocsandFee = async (chatId, selected_cert) => {
     console.log(selected_cert)
 
+    await botStatus(chatId, 'typing');
     await sendMessage(chatId, `You have selected *${selected_cert.id}* ✅`,'','Markdown');
     const initialMessage = await sendMessage(chatId, '⏳ Please wait while getting required docs',{},'Markdown');
  

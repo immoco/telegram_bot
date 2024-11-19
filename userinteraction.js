@@ -1,5 +1,5 @@
 const axios = require('axios');
-const {sendMessage, editMessage, deleteMessage} = require('./message');
+const {sendMessage, editMessage, deleteMessage, botStatus} = require('./message');
 const {getSession, setSession, deleteSession, certificatesCache, servicesCache} = require('./cache');
 const {fetchAgentData, sendDataToSheet} = require('./databasefns');
 const {validateEmail, validateMobile} = require('./input_validation')
@@ -69,8 +69,9 @@ const handleCancel = async (chatId, callbackQuery) => {
     
       // Use Promise.all to handle multiple async tasks concurrently
       await Promise.all([
+        botStatus(chatId, 'typing'),
         editMessage(chatId, callbackQuery.message.text, callbackQuery.message.message_id, removeInlineKeyboard, 'Markdown'), // Send user info to the server;
-        sendToServer('abandoned', userInfo), 
+        sendDataToSheet(userInfo), 
         sendMessage(chatId, "Your request has been cancelled.")  // Send cancellation message
       ]);
       
@@ -88,6 +89,7 @@ const handleProceed = async (chatId, callbackQuery) => {
 
         if (!certificates && !services) {
           console.log("No certificates found in the cache.");
+          await botStatus(chatId, 'typing');
           sendMessage(chatId, 'Please restart the bot');
           return;
         }
@@ -129,11 +131,10 @@ ${reqDocs}
 *Fee Breakdown:*
 ${fee}`
 
-        await sendMessage(chatId, "*🥳 Great! Lets proceed further*",'','Markdown');
-
+        await editMessage(chatId, text, callbackQuery.message.message_id, '', 'Markdown');
         // Use Promise.all to handle multiple async tasks concurrently
         await Promise.all([
-          editMessage(chatId, text, callbackQuery.message.message_id, '', 'Markdown'), // Send user info to the server;
+          sendMessage(chatId, "*🥳 Great! Lets proceed further*",'','Markdown'),botStatus(chatId, 'typing')
         ]);
         await handleUserInputs(chatId);
         
@@ -157,7 +158,10 @@ const handleUserInputs = async (...args) => {
                inputs: [] 
               };
             userSession.input_state = true
-            await sendMessage(chatId, "*May I have your name? 😊*", '', 'Markdown');
+            await botStatus(chatId, 'typing');
+            await Promise.all([
+              sendMessage(chatId, "*May I have your name? 😊*", '', 'Markdown')
+            ])
             userSession.step = 2;
             setSession(chatId, userSession);
           }
@@ -165,7 +169,10 @@ const handleUserInputs = async (...args) => {
           else if (userSession.step === 2) {
               userSession.inputs.push(message.text);
               userSession.step = 3;
-              await sendMessage(chatId, "*And your email for updates? 📬*", '', 'Markdown');
+              await botStatus(chatId, 'typing');
+              await Promise.all([
+                sendMessage(chatId, "*And your email for updates? 📬*", '', 'Markdown')//,botStatus(chatId, 'typing')
+              ])
               setSession(chatId, userSession);
           } else if (userSession.step === 3) {
 
@@ -173,7 +180,10 @@ const handleUserInputs = async (...args) => {
               if (validMail) {
                 userSession.inputs.push(validMail);
                 userSession.step = 4;
-                await sendMessage(chatId, "*Lastly, the mobile number for contact? 📞*", '', 'Markdown');
+                await botStatus(chatId, 'typing');
+                await Promise.all([
+                  sendMessage(chatId, "*Lastly, the mobile number for contact? 📞*", '', 'Markdown')//,botStatus(chatId, 'typing')
+                ])
                 setSession(chatId, userSession);
               }
           } else if (userSession.step === 4) {
@@ -182,7 +192,16 @@ const handleUserInputs = async (...args) => {
                 userSession.inputs.push(validMobile);
                 userSession.step = 5; // All inputs collected
                 setSession(chatId, userSession);
-                await sendUrgencyOptions(chatId);
+                const replyMarkup = {
+                  inline_keyboard: [
+                      [{ text: "No", callback_data: "urgent_no" }, { text: "Yes", callback_data: "urgent_yes" }]
+                  ]
+              };
+                await botStatus(chatId, 'typing');
+                await Promise.all([
+                  sendUrgencyOptions(chatId, replyMarkup)
+                ])
+                
               }
           }
     } catch (error) {
@@ -190,20 +209,19 @@ const handleUserInputs = async (...args) => {
     }
 };
 
-const sendUrgencyOptions = async (chatId) => {
-
-    const replyMarkup = {
-        inline_keyboard: [
-            [{ text: "No", callback_data: "urgent_no" }, { text: "Yes", callback_data: "urgent_yes" }]
-        ]
-    };
-    await sendMessage(chatId, "*Do you want to proceed urgently with your certificate?*", replyMarkup, 'Markdown');
+const sendUrgencyOptions = async (chatId, replyMarkup) => {
+    await Promise.all([
+      sendMessage(chatId, "*Do you want to proceed urgently with your certificate?*", replyMarkup, 'Markdown')
+    ])
 };
 
 const showConfirmation = async (chatId, urgent_status, messageId) => {
 try {
-
-  if (urgent_status) { await editMessage (chatId, "*Your requirement is urgent*", messageId, {inline_keyboard:[[]]}, 'Markdown' )}
+  await botStatus(chatId, 'typing');
+  if (urgent_status) { await Promise.all([  
+    editMessage (chatId, "*Your requirement is urgent*", messageId, {inline_keyboard:[[]]}, 'Markdown')
+    ])
+  }
    
     let userInputData = getSession(chatId);
     userInputData = {
@@ -246,8 +264,11 @@ try {
           [{ text: "Sumbit", callback_data: "submit_yes" }]
       ]
     };
+    await botStatus(chatId, 'typing');
+    await Promise.all([
+      sendMessage(chatId, msgText, reply_markup, 'Markdown')//, botStatus(chatId, 'typing')
+    ])
 
-    await sendMessage(chatId, msgText, reply_markup, 'Markdown');
 }
 catch(err){
   await sendMessage(chatId, 'Please restart the bot');
@@ -255,6 +276,33 @@ catch(err){
 }
 
 const submitDetails = async (chatId, messageId) => {
+
+    const date = new Date().toLocaleTimeString();
+    const time = new Date().toLocaleDateString();
+    const date_time = `${date} ${time}`
+
+    let init
+    await botStatus(chatId, 'typing');
+    await Promise.all([
+      init = await sendMessage(chatId, '*Sending your application 🚀, it may take some time⌛*', '', 'Markdown')//,botStatus(chatId, 'typing')
+    ])
+    
+    let userInputData = getSession(chatId);
+    let msgText;
+    console.log(userInputData);
+
+    const agentData = await fetchAgentData()
+
+    userInputData = {
+      ...userInputData,
+      cer_uid: await UniqueId(userInputData.certificate, userInputData.mobile),
+      agentDetails: agentData,
+      time: date_time,
+      type: 'submitted_bot'
+    }
+
+    setSession(chatId, userInputData);
+    console.log(userInputData);
 
   if (userInputData.urgent_state) {
     msgText = `
@@ -281,49 +329,26 @@ const submitDetails = async (chatId, messageId) => {
 *Preferred Time:* ${userInputData.preferredTime}
 `
   }
+  await Promise.all([
+      editMessage(chatId, msgText,messageId, {inline_keyboard:[[]]}, 'Markdown'),
+      //botStatus(chatId, 'typing')
+  ])
+   
 
-  await editMessage(chatId, msgText,messageId, removeInlineKeyboard, 'Markdown')
-  const init = await sendMessage(chatId, '*Sending your application 🚀, it may take some time⌛*', '', 'Markdown')
-  let userInputData = getSession(chatId);
-  let msgText;
-  console.log(userInputData);
-
- 
-  
-    let agentData = await fetchAgentData();
-    console.log(agentData)
-    const removeInlineKeyboard = {
-      inline_keyboard: [[]]  // Set an empty inline keyboard to remove buttons
-    };
-    
-
-    const date = new Date().toLocaleTimeString();
-    const time = new Date().toLocaleDateString();
-    const date_time = `${date} ${time}`
-
-    userInputData = {
-      ...userInputData,
-      cer_uid: await UniqueId(userInputData.certificate, userInputData.mobile),
-      agentDetails: agentData,
-      time: date_time,
-      type: 'submitted_bot'
-    }
-
-    setSession(chatId, userInputData);
-    console.log(userInputData);
     const wa_link =chatOnWA(userInputData)
 
     const sucMsg = `
-*Congrats, your application for ${userInputData.certificate} has been submitted successfully*.
+*Congrats\\, your application for ${userInputData.certificate} has been submitted successfully*\\.
 
-*Application Id:* ${userInputData.cer_uid}
+\>*Application Id\\: ${userInputData.cer_uid}*
 
-*Customer Support Agent Details*
-*Name:* ${userInputData.agentDetails.sa_name}
-*Mobile:* ${userInputData.agentDetails.sa_contact}
+\>*Customer Support Agent Details*
+\>*Name\\: ${userInputData.agentDetails.sa_name}*
+\>*Mobile\\: \\${userInputData.agentDetails.sa_contact}*
 
-Our customer support agent will contact you soon 🤙
-Have a great day 😊
+*Our customer support agent will contact you soon🤙*
+*Have a great day 😊*
+
 `
 
   //  const mobile = callNow(userData);
@@ -332,10 +357,10 @@ Have a great day 😊
         [{text: '💬 Chat on WA', url:wa_link }]
       ]
     }
-    
     await Promise.all([
-      await sendDataToSheet(userData),
-      await editMessage(chatId, sucMsg, init.message_id, reply_markup, 'Markdown'),
+        //botStatus(chatId, 'typing'),
+        sendDataToSheet(userInputData),
+        editMessage(chatId, sucMsg, init.message_id, reply_markup, 'MarkdownV2'),
  // Send user info to the server;
     ]);
       

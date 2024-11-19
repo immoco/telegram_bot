@@ -255,11 +255,6 @@ catch(err){
 }
 
 const submitDetails = async (chatId, messageId) => {
-  await editMessage(chatId, msgText,messageId, removeInlineKeyboard, 'Markdown')
-  const init = await sendMessage(chatId, '*Sending your application 🚀, it may take some time⌛*', '', 'Markdown')
-  let userInputData = getSession(chatId);
-  let msgText;
-  console.log(userInputData);
 
   if (userInputData.urgent_state) {
     msgText = `
@@ -286,6 +281,14 @@ const submitDetails = async (chatId, messageId) => {
 *Preferred Time:* ${userInputData.preferredTime}
 `
   }
+
+  await editMessage(chatId, msgText,messageId, removeInlineKeyboard, 'Markdown')
+  const init = await sendMessage(chatId, '*Sending your application 🚀, it may take some time⌛*', '', 'Markdown')
+  let userInputData = getSession(chatId);
+  let msgText;
+  console.log(userInputData);
+
+ 
   
     let agentData = await fetchAgentData();
     console.log(agentData)

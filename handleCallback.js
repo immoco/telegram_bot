@@ -76,6 +76,9 @@ async function handleCallbackQuery(callback_query, callBackData, chat_id, messag
     }
     sendMessage(chat_id, "Select the language comfortable for you😊", reply_markup )
     }
+    else if(callBackData.toString() === 'open_channel'){
+      
+    }
 
 answerCallbackQuery(callback_query.id)
 }

@@ -10,7 +10,7 @@ const sendMessage = async (...args) => {
     const reqData = {
         chat_id: args[0],
         text: args[1],
-        ...(args[2] ? { reply_markup: args[2] } : {}),
+        ...(args[2] !== '' ? { reply_markup: args[2] } : ''),
         ...(args[3] ? { parse_mode: args[3] } : {}),
     };
 

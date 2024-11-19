@@ -4,12 +4,16 @@ const {showConfirmation} = require('./userinteraction');
 const e = require('cors');
 
 
-function getDateKeyboard(year, month) {
+function getDateKeyboard(year, month, isNextMonth) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   let keyboard = [];
+  let startDay = 1;
+  if (!isNextMonth) {
+    startDay = new Date().getDate()
+  }
 
   // Loop through days in the month
-  for (let day = new Date().getDate(); day <= daysInMonth; day += 3) {
+  for (let day = startDay; day <= daysInMonth; day += 3) {
     let row = [];  // Initialize a new row
 
     // Add up to 3 days to the row
@@ -124,15 +128,11 @@ const showDate_Time = async (chatId, callBackData, messageId) => {
       const [_, year, month] = callBackData.split('_');
       const newYear = parseInt(year);
       const newMonth = parseInt(month);
-      const newKeyboard = getDateKeyboard(newYear, newMonth);
-
-      const reply_markup = {
-        inline_keyboard: newKeyboard
-      }
+      const newKeyboard = getDateKeyboard(newYear, newMonth, true);
 
       const msgText = '*Okay, then please select a preferred date for applying 📅*';
 
-      await editMessage(chatId, msgText , messageId, reply_markup, 'Markdown');
+      await editMessage(chatId, msgText , messageId, newKeyboard, 'Markdown');
 
     }
 

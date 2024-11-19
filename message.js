@@ -54,8 +54,34 @@ const deleteMessage = async (chatId, messageId) => {
     }
  };
 
+const botStatus = async (chatId, action_status) => {
+    const data = {
+        chat_id: chatId,
+        action: action_status
+    }
+
+    const startTime = Date.now(); // Track start time
+    
+    try {
+        const response = await axios.post(`${TELEGRAM_API}/sendChatAction`, data);
+        console.log('Message sent:', response.data);
+
+        const elapsedTime = Date.now() - startTime;
+        if (elapsedTime < 1000) { // Ensure at least 1-second delay
+            await new Promise(resolve => setTimeout(resolve, 1000 - elapsedTime));
+        }
+
+        return response.data.result; // Return message details
+    } catch (error) {
+        console.log('Error:', error);
+        throw error; // 
+    }
+
+ }
+
 module.exports = {
     sendMessage,
     editMessage,
-    deleteMessage
+    deleteMessage,
+    botStatus
 }

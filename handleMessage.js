@@ -15,7 +15,7 @@ const handleMessage = async (message) => {
                 [{text:'Join the Channel', url:'https://t.me/tnesevairobotnews'}]
             ]
         }
-        sendMessage(message.chat.id, "Welcome to IMMO e-Services, choose an option from the list below.", reply_markup )
+        sendMessage(message.chat.id, "*Welcome to IMMO e-Services, choose an option from the list below.*", reply_markup,'Markdown' )
     }
     else if(!message.text.startsWith('/')){
         await handleUserInputs(message.chat.id, message);

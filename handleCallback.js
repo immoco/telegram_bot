@@ -53,8 +53,8 @@ async function handleCallbackQuery(callback_query, callBackData, chat_id, messag
     else if (callBackData.toString() === 'handle_cancel'){
       await handleCancel(chat_id, callback_query);
     }
-    else if (callBackData.toString() === 'handle_proceed'){
-        await handleProceed(chat_id, callback_query);
+    else if (callBackData.toString().startsWith('handle_proceed')){
+        await handleProceed(chat_id, callback_query, callBackData);
     }
     else if (callBackData.toString() === 'urgent_yes'){
       await showConfirmation(chat_id, true, messageId);

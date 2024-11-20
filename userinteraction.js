@@ -80,42 +80,50 @@ const handleCancel = async (chatId, callbackQuery) => {
     }
 };
 
-const handleProceed = async (chatId, callbackQuery) => {
+const handleProceed = async (chatId, callbackQuery, callback_data) => {
     try {
-        const certificates = certificatesCache.get('certificates'); // Retrieve the stored certificates
-        let services;
-        if (servicesCache.get('voterid_services')) {services = servicesCache.get('voterid_services')}
-        else services = servicesCache.get('aadhar_services')
 
+        let certificates;
+        let services;
+        let currentService;
+
+        if (callback_data.endsWith('_certificates')){
+          certificates = certificatesCache.get('certificates'); // Retrieve the stored certificates
+          if (certificates) {
+            // Find the certificate that was selected based on callback data
+            const selectedCertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
+            currentService = certificates.find(certificate => certificate.id === selectedCertId);
+  
+            setSession(chatId, {
+              certificate: currentService.data.certificate_name,
+              cer_code: currentService.data.certificate_code,
+              input_state: false,
+            });
+            console.log(getSession(chatId));
+          }
+        }
+        else if (callback_data.endsWith('_services')){
+          if (servicesCache.get('voterid_services')) {services = servicesCache.get('voterid_services')}
+          else services = servicesCache.get('aadhar_services');
+
+          if (services) {
+            // Find the certificate that was selected based on callback data
+            const selectedSertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
+            currentService = services.find(certificate => certificate.id === selectedSertId);
+  
+            setSession(chatId, {
+              certificate: currentService.data.service_name,
+              input_state: false,
+            });
+            console.log(getSession(chatId));
+          }
+        }
+      
         if (!certificates && !services) {
           console.log("No certificates found in the cache.");
           await botStatus(chatId, 'typing');
           sendMessage(chatId, 'Please restart the bot');
           return;
-        }
-        let currentService;
-
-        if (certificates) {
-          // Find the certificate that was selected based on callback data
-          const selectedCertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
-          currentService = certificates.find(certificate => certificate.id === selectedCertId);
-
-          setSession(chatId, {
-            certificate: currentService.data.certificate_name,
-            cer_code: currentService.data.certificate_code,
-            input_state: false,
-          });
-          console.log(getSession(chatId));
-        } else if (services) {
-          // Find the certificate that was selected based on callback data
-          const selectedSertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
-          currentService = services.find(certificate => certificate.id === selectedSertId);
-
-          setSession(chatId, {
-            certificate: currentService.data.service_name,
-            input_state: false,
-          });
-          console.log(getSession(chatId));
         }
 
         const reqDocs = currentService.data.required_docs.map((doc) => doc.trim()).join('\n');

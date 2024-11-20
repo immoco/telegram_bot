@@ -130,7 +130,13 @@ const sendReqDocsandFee = async (chatId, selected_cert) => {
     try {
      const reqDocs = selected_cert.data.required_docs.map((doc) => doc.trim()).join('\n');
      const fee = selected_cert.data.fee.map((fee) => fee.trim()).join('\n');
-
+     let currentService;
+     if (selected_cert.data.certificate_code) {
+        currentService = '_certificates'
+     } else {
+        currentService = '_services'
+     }
+     
      const text = `
 *${selected_cert.data.certificate_code ? selected_cert.data.certificate_name:selected_cert.data.service_name}*
 
@@ -143,7 +149,7 @@ ${fee}
 *Do you want to proceed further?*`
  
      const reply_markup = {
-       inline_keyboard: [[{text: "Cancel", callback_data: "handle_cancel"},{text: "Proceed", callback_data: "handle_proceed"}],
+       inline_keyboard: [[{text: "Cancel", callback_data: "handle_cancel"},{text: "Proceed", callback_data: `handle_proceed${currentService}`}],
      ]};
  
      // Send a message with the inline keyboard

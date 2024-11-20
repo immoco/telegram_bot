@@ -84,7 +84,7 @@ const sendCertificatesMenu = async (chatId, callBackData) => {
             const inlineKeyboard = services.map((service) => [
               {
                 text: service.data.service_name, // Display the certificate name on the button
-                callback_data: `service_${service.id}`, // Unique identifier for each certificate
+                callback_data: `service_vot_${service.id}`, // Unique identifier for each certificate
               },
             ]);
 
@@ -103,7 +103,7 @@ const sendCertificatesMenu = async (chatId, callBackData) => {
         const inlineKeyboard = services.map((service) => [
           {
             text: service.data.service_name, // Display the certificate name on the button
-            callback_data: `service_${service.id}`, // Unique identifier for each certificate
+            callback_data: `service_aad_${service.id}`, // Unique identifier for each certificate
           },
         ]);
 

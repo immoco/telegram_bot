@@ -37,17 +37,25 @@ async function handleCallbackQuery(callback_query, callBackData, chat_id, messag
       await deleteMessage(chat_id, messageId);
     }
     else if (callBackData.toString().startsWith('service_')){
-      let services;
-      if (servicesCache.get('voterid_services')) {
-        services = servicesCache.get('voterid_services');
-      }
-      else services = servicesCache.get('aadhar_services');
-      console.log(services)
-      for (const service of services) {
-        if (callBackData === `service_${service.id}`) {
-            await sendReqDocsandFee(chat_id, service);
+      if (callBackData.toString().startsWith('service_vot_')) {
+        const services = servicesCache.get('voterid_services');
+        console.log(services)
+        for (const service of services) {
+          if (callBackData === `service_vot_${service.id}`) {
+              await sendReqDocsandFee(chat_id, service);
+          }
         }
       }
+      else if (callBackData.toString().startsWith('service_aad')) {
+        const services = servicesCache.get('aadhar_services');
+        console.log(services)
+        for (const service of services) {
+          if (callBackData === `service_aad_${service.id}`) {
+              await sendReqDocsandFee(chat_id, service);
+          }
+        }
+      }
+      
       await deleteMessage(chat_id, messageId);
     }
     else if (callBackData.toString() === 'handle_cancel'){

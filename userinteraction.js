@@ -360,10 +360,9 @@ const submitDetails = async (chatId, messageId) => {
     await Promise.all([
         //botStatus(chatId, 'typing'),
         sendDataToSheet(userInputData),
-        editMessage(chatId, sucMsg, init.message_id, reply_markup, 'MarkdownV2'),
  // Send user info to the server;
     ]);
-      
+    await editMessage(chatId, sucMsg, init.message_id, reply_markup, 'MarkdownV2')
       
 
 }

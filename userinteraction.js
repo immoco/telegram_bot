@@ -363,9 +363,6 @@ const submitDetails = async (chatId, messageId) => {
     ]);
 
     await editMessage(chatId, sucMsg, init.message_id, reply_markup, 'MarkdownV2')
-      
-      
-
 }
 
 

@@ -1,4 +1,4 @@
-const {sendMessage, editMessage, deleteMessage} = require('./message');
+const {sendMessage, editMessage, deleteMessage, botStatus} = require('./message');
 const {getSession, setSession, certificatesCache} = require('./cache');
 const {showConfirmation} = require('./userinteraction');
 const e = require('cors');
@@ -75,6 +75,7 @@ const showDate_Time = async (chatId, callBackData, messageId) => {
     
     const userSession = getSession(chatId);
     if (callBackData.startsWith('urgent_no')){
+      await botStatus(chatId, 'typing');
       await editMessage (chatId, "*Your requirement is not urgent*", messageId, '', 'Markdown' )
       const msgText = '*Okay, then please select a preferred date for applying 📅*';
       const dateObj = new Date()
@@ -100,7 +101,7 @@ const showDate_Time = async (chatId, callBackData, messageId) => {
       const reply_markup = {
         inline_keyboard: getTimeKeyboard(dateObj.getFullYear(), dateObj.getMonth())
       }
-
+      await botStatus(chatId, 'typing');
       await sendMessage(chatId, "*Now please select the time! ⏲️*", reply_markup, 'Markdown');
     }
 
@@ -115,7 +116,7 @@ const showDate_Time = async (chatId, callBackData, messageId) => {
           preferredTime: selectedTIme,
         }
       )
-
+      await botStatus(chatId, 'typing');
       await sendMessage(chatId, msgText, '', 'Markdown'); //showing selected date
       console.log(userSession);
 
@@ -131,7 +132,7 @@ const showDate_Time = async (chatId, callBackData, messageId) => {
       const newKeyboard = getDateKeyboard(newYear, newMonth, true);
 
       const msgText = '*Okay, then please select a preferred date for applying 📅*';
-
+      await botStatus(chatId, 'typing');
       await editMessage(chatId, msgText , messageId, newKeyboard, 'Markdown');
 
     }

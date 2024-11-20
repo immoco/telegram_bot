@@ -103,8 +103,8 @@ const handleProceed = async (chatId, callbackQuery, callback_data) => {
           }
         }
         else if (callback_data.endsWith('_services')){
-          if (servicesCache.get('voterid_services')) {services = servicesCache.get('voterid_services')}
-          else services = servicesCache.get('aadhar_services');
+          if (callback_data.includes('_vot_services')) {services = servicesCache.get('voterid_services')}
+          else if (callback_data.includes('_aad_services')) {services = servicesCache.get('aadhar_services')};
 
           if (services) {
             // Find the certificate that was selected based on callback data

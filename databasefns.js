@@ -133,8 +133,10 @@ const sendReqDocsandFee = async (chatId, selected_cert) => {
      let currentService;
      if (selected_cert.data.certificate_code) {
         currentService = '_certificates'
-     } else {
-        currentService = '_services'
+     } else if (selected_cert.data.service_catgeory === 'vot') {
+        currentService = '_vot_services'
+     }  else if (selected_cert.data.service_catgeory === 'aad') {
+        currentService = '_aad_services'
      }
      
      const text = `

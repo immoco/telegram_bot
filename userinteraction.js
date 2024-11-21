@@ -2,7 +2,7 @@ const axios = require('axios');
 const {sendMessage, editMessage, deleteMessage, botStatus} = require('./message');
 const {getSession, setSession, deleteSession, certificatesCache, servicesCache} = require('./cache');
 const {fetchAgentData, sendDataToSheet} = require('./databasefns');
-const {validateEmail, validateMobile} = require('./input_validation')
+const {validateMobile} = require('./input_validation')
 
 const random_hash = ()=>{
   var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
@@ -173,32 +173,29 @@ const handleUserInputs = async (...args) => {
             userSession.step = 2;
             setSession(chatId, userSession);
           }
-            // User is in the middle of providing inputs
-          else if (userSession.step === 2) {
-              userSession.inputs.push(message.text);
-              userSession.step = 3;
-              await botStatus(chatId, 'typing');
-              await Promise.all([
-                sendMessage(chatId, "*And your email for updates? 📬*", '', 'Markdown')//,botStatus(chatId, 'typing')
-              ])
-              setSession(chatId, userSession);
-          } else if (userSession.step === 3) {
-
-              const validMail= await validateEmail(chatId, message.text)
-              if (validMail) {
-                userSession.inputs.push(validMail);
-                userSession.step = 4;
+          // User is in the middle of providing inputs for email
+          // else if (userSession.step === 2) {
+          //     userSession.inputs.push(message.text);
+          //     userSession.step = 3;
+          //     await botStatus(chatId, 'typing');
+          //     await Promise.all([
+          //       sendMessage(chatId, "*And your email for updates? 📬*", '', 'Markdown')//,botStatus(chatId, 'typing')
+          //     ])
+          //     setSession(chatId, userSession);
+          // } 
+            else if (userSession.step === 2) {
+                userSession.inputs.push(message.text);
+                userSession.step = 3;
                 await botStatus(chatId, 'typing');
                 await Promise.all([
                   sendMessage(chatId, "*Lastly, the mobile number for contact? 📞*", '', 'Markdown')//,botStatus(chatId, 'typing')
                 ])
                 setSession(chatId, userSession);
-              }
-          } else if (userSession.step === 4) {
+          } else if (userSession.step === 3) {
               const validMobile = await validateMobile(chatId, message.text);
               if (validMobile) {
                 userSession.inputs.push(validMobile);
-                userSession.step = 5; // All inputs collected
+                userSession.step = 4; // All inputs collected
                 setSession(chatId, userSession);
                 const replyMarkup = {
                   inline_keyboard: [
@@ -236,8 +233,7 @@ try {
       ...userInputData,
       urgent_state: urgent_status ? true:false,
       name: userInputData.inputs[0],
-      mobile: userInputData.inputs[2],
-      email: userInputData.inputs[1]
+      mobile: userInputData.inputs[1],
     }
     setSession(chatId, userInputData);
     let msgText;
@@ -247,8 +243,7 @@ try {
 *Application Summary*
       
 *Name:* ${userInputData.inputs[0]}
-*Email:* ${userInputData.inputs[1]}
-*Mobile:* ${userInputData.inputs[2]}
+*Mobile:* ${userInputData.inputs[1]}
       
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -259,7 +254,6 @@ try {
             
 *Name:* ${userInputData.inputs[0]}
 *Mobile:* ${userInputData.inputs[1]}
-*Email:* ${userInputData.inputs[2]}
             
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -317,8 +311,7 @@ const submitDetails = async (chatId, messageId) => {
 *Application Summary*
     
 *Name:* ${userInputData.inputs[0]}
-*Email:* ${userInputData.inputs[1]}
-*Mobile:* ${userInputData.inputs[2]}
+*Mobile:* ${userInputData.inputs[1]}
     
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -329,7 +322,6 @@ const submitDetails = async (chatId, messageId) => {
           
 *Name:* ${userInputData.inputs[0]}
 *Mobile:* ${userInputData.inputs[1]}
-*Email:* ${userInputData.inputs[2]}
           
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -354,7 +346,10 @@ const submitDetails = async (chatId, messageId) => {
 \>*Name\\: ${userInputData.agentDetails.sa_name}*
 \>*Mobile\\: \\${userInputData.agentDetails.sa_contact}*
 
-*Our customer support agent will contact you soon🤙*
+*Our customer support agent will contact you soon 🤙*
+
+_For immediate response, click on *Chat on WA*_
+
 *Have a great day 😊*
 
 `

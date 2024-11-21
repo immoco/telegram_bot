@@ -20,6 +20,5 @@ const validateEmail = async (chatId, email) => {
   }
 
 module.exports = {
-    validateEmail,
     validateMobile
 }

@@ -8,7 +8,7 @@ const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
 
 const {sendCertificatesMenu, sendReqDocsandFee}  = require('./databasefns')
 const {sendMessage, editMessage, deleteMessage} = require('./message'); 
-const {handleCancel, handleProceed, showConfirmation, submitDetails} = require('./userinteraction')
+const {handleCancel, handleProceed, showConfirmation, submitDetails,sendTNservicesMenu} = require('./userinteraction')
 const {showDate_Time} = require('./calendar')
 const {showHelp}= require('./help')
 
@@ -16,6 +16,10 @@ const {showHelp}= require('./help')
 async function handleCallbackQuery(callback_query, callBackData, chat_id, messageId) {
     if (callBackData === 'tn_certificates'){
       await sendCertificatesMenu(chat_id, callBackData); 
+      await deleteMessage(chat_id, messageId);
+    }
+    else if (callBackData === 'tn_services'){
+      await sendTNservicesMenu(chat_id, callBackData); 
       await deleteMessage(chat_id, messageId);
     }
     else if (callBackData === 'voter_id'){
@@ -37,32 +41,24 @@ async function handleCallbackQuery(callback_query, callBackData, chat_id, messag
       await deleteMessage(chat_id, messageId);
     }
     else if (callBackData.toString().startsWith('service_')){
-      if (callBackData.toString().startsWith('service_vot_')) {
-        const services = servicesCache.get('voterid_services');
-        console.log(services)
-        for (const service of services) {
-          if (callBackData === `service_vot_${service.id}`) {
-              await sendReqDocsandFee(chat_id, service);
-          }
+      let services;
+      if (servicesCache.get('voterid_services')) {
+        services = servicesCache.get('voterid_services');
+      }
+      else services = servicesCache.get('aadhar_services');
+      console.log(services)
+      for (const service of services) {
+        if (callBackData === `service_${service.id}`) {
+            await sendReqDocsandFee(chat_id, service);
         }
       }
-      else if (callBackData.toString().startsWith('service_aad')) {
-        const services = servicesCache.get('aadhar_services');
-        console.log(services)
-        for (const service of services) {
-          if (callBackData === `service_aad_${service.id}`) {
-              await sendReqDocsandFee(chat_id, service);
-          }
-        }
-      }
-      
       await deleteMessage(chat_id, messageId);
     }
     else if (callBackData.toString() === 'handle_cancel'){
       await handleCancel(chat_id, callback_query);
     }
-    else if (callBackData.toString().startsWith('handle_proceed')){
-        await handleProceed(chat_id, callback_query, callBackData);
+    else if (callBackData.toString() === 'handle_proceed'){
+        await handleProceed(chat_id, callback_query);
     }
     else if (callBackData.toString() === 'urgent_yes'){
       await showConfirmation(chat_id, true, messageId);

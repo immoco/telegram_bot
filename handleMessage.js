@@ -8,7 +8,7 @@ const handleMessage = async (message) => {
     if (message.text === '/start'){
         const reply_markup = {
             inline_keyboard: [
-                [{text:'TN e-Sevai Certificates', callback_data:'tn_certificates'}],
+                [{text:'TN e-Sevai Certificates', callback_data:'tn_services'}],
                 [{text:'Apply for Voter Id', callback_data:'voter_id'}],
                 [{text:'Aadhar Services', callback_data:'aadhar_services'}], 
                 [{text:'Help', callback_data:'help'}],

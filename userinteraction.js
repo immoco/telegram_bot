@@ -2,7 +2,7 @@ const axios = require('axios');
 const {sendMessage, editMessage, deleteMessage, botStatus} = require('./message');
 const {getSession, setSession, deleteSession, certificatesCache, servicesCache} = require('./cache');
 const {fetchAgentData, sendDataToSheet} = require('./databasefns');
-const {validateMobile} = require('./input_validation')
+const {validateEmail, validateMobile} = require('./input_validation')
 
 const random_hash = ()=>{
   var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
@@ -29,11 +29,16 @@ const UniqueId = async (certificateName, mobileNumber) => {
   return `${certificatePrefix}${day}${month}${year}${hash}${mobileSuffix}`;
 }
 
-const callNow = (userData) => {
-  console.log(userData)
-  const sanitizedMobile = userData.agentDetails.sa_contact.toString().replace(' ', '');
-  console.log(sanitizedMobile);
-  return sanitizedMobile
+const sendTNservicesMenu = async (chatId, callback_data) => {
+  const replyMarkup = {
+    inline_keyboard: [
+      [{text: "Apply or Update Certificates", callback_data: "tn_certificates"}], 
+      [{text: "Check Status", url: "https://tnesevai.tn.gov.in/edistrict/checkstatus/publicsearch"}], 
+      [{text: "Download Certificate", url: "https://tnedistrict.tn.gov.in/mislogin/DownloadCertificate.xhtml"}], 
+    ]
+  }
+
+  sendMessage(chatId, "*Select the service you want! 😊*", replyMarkup, 'Markdown')
 }
 
 const chatOnWA = (userData) =>{
@@ -80,50 +85,42 @@ const handleCancel = async (chatId, callbackQuery) => {
     }
 };
 
-const handleProceed = async (chatId, callbackQuery, callback_data) => {
+const handleProceed = async (chatId, callbackQuery) => {
     try {
-
-        let certificates;
+        const certificates = certificatesCache.get('certificates'); // Retrieve the stored certificates
         let services;
-        let currentService;
+        if (servicesCache.get('voterid_services')) {services = servicesCache.get('voterid_services')}
+        else services = servicesCache.get('aadhar_services')
 
-        if (callback_data.endsWith('_certificates')){
-          certificates = certificatesCache.get('certificates'); // Retrieve the stored certificates
-          if (certificates) {
-            // Find the certificate that was selected based on callback data
-            const selectedCertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
-            currentService = certificates.find(certificate => certificate.id === selectedCertId);
-  
-            setSession(chatId, {
-              certificate: currentService.data.certificate_name,
-              cer_code: currentService.data.certificate_code,
-              input_state: false,
-            });
-            console.log(getSession(chatId));
-          }
-        }
-        else if (callback_data.endsWith('_services')){
-          if (callback_data.includes('_vot_services')) {services = servicesCache.get('voterid_services')}
-          else if (callback_data.includes('_aad_services')) {services = servicesCache.get('aadhar_services')};
-
-          if (services) {
-            // Find the certificate that was selected based on callback data
-            const selectedSertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
-            currentService = services.find(certificate => certificate.id === selectedSertId);
-  
-            setSession(chatId, {
-              certificate: currentService.data.service_name,
-              input_state: false,
-            });
-            console.log(getSession(chatId));
-          }
-        }
-      
         if (!certificates && !services) {
           console.log("No certificates found in the cache.");
           await botStatus(chatId, 'typing');
           sendMessage(chatId, 'Please restart the bot');
           return;
+        }
+        let currentService;
+
+        if (certificates) {
+          // Find the certificate that was selected based on callback data
+          const selectedCertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
+          currentService = certificates.find(certificate => certificate.id === selectedCertId);
+
+          setSession(chatId, {
+            certificate: currentService.data.certificate_name,
+            cer_code: currentService.data.certificate_code,
+            input_state: false,
+          });
+          console.log(getSession(chatId));
+        } else if (services) {
+          // Find the certificate that was selected based on callback data
+          const selectedSertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
+          currentService = services.find(certificate => certificate.id === selectedSertId);
+
+          setSession(chatId, {
+            certificate: currentService.data.service_name,
+            input_state: false,
+          });
+          console.log(getSession(chatId));
         }
 
         const reqDocs = currentService.data.required_docs.map((doc) => doc.trim()).join('\n');
@@ -173,29 +170,32 @@ const handleUserInputs = async (...args) => {
             userSession.step = 2;
             setSession(chatId, userSession);
           }
-          // User is in the middle of providing inputs for email
-          // else if (userSession.step === 2) {
-          //     userSession.inputs.push(message.text);
-          //     userSession.step = 3;
-          //     await botStatus(chatId, 'typing');
-          //     await Promise.all([
-          //       sendMessage(chatId, "*And your email for updates? 📬*", '', 'Markdown')//,botStatus(chatId, 'typing')
-          //     ])
-          //     setSession(chatId, userSession);
-          // } 
-            else if (userSession.step === 2) {
-                userSession.inputs.push(message.text);
-                userSession.step = 3;
+            // User is in the middle of providing inputs
+          else if (userSession.step === 2) {
+              userSession.inputs.push(message.text);
+              userSession.step = 3;
+              await botStatus(chatId, 'typing');
+              await Promise.all([
+                sendMessage(chatId, "*And your email for updates? 📬*", '', 'Markdown')//,botStatus(chatId, 'typing')
+              ])
+              setSession(chatId, userSession);
+          } else if (userSession.step === 3) {
+
+              const validMail= await validateEmail(chatId, message.text)
+              if (validMail) {
+                userSession.inputs.push(validMail);
+                userSession.step = 4;
                 await botStatus(chatId, 'typing');
                 await Promise.all([
                   sendMessage(chatId, "*Lastly, the mobile number for contact? 📞*", '', 'Markdown')//,botStatus(chatId, 'typing')
                 ])
                 setSession(chatId, userSession);
-          } else if (userSession.step === 3) {
+              }
+          } else if (userSession.step === 4) {
               const validMobile = await validateMobile(chatId, message.text);
               if (validMobile) {
                 userSession.inputs.push(validMobile);
-                userSession.step = 4; // All inputs collected
+                userSession.step = 5; // All inputs collected
                 setSession(chatId, userSession);
                 const replyMarkup = {
                   inline_keyboard: [
@@ -233,7 +233,8 @@ try {
       ...userInputData,
       urgent_state: urgent_status ? true:false,
       name: userInputData.inputs[0],
-      mobile: userInputData.inputs[1],
+      mobile: userInputData.inputs[2],
+      email: userInputData.inputs[1]
     }
     setSession(chatId, userInputData);
     let msgText;
@@ -243,7 +244,8 @@ try {
 *Application Summary*
       
 *Name:* ${userInputData.inputs[0]}
-*Mobile:* ${userInputData.inputs[1]}
+*Email:* ${userInputData.inputs[1]}
+*Mobile:* ${userInputData.inputs[2]}
       
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -254,6 +256,7 @@ try {
             
 *Name:* ${userInputData.inputs[0]}
 *Mobile:* ${userInputData.inputs[1]}
+*Email:* ${userInputData.inputs[2]}
             
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -311,7 +314,8 @@ const submitDetails = async (chatId, messageId) => {
 *Application Summary*
     
 *Name:* ${userInputData.inputs[0]}
-*Mobile:* ${userInputData.inputs[1]}
+*Email:* ${userInputData.inputs[1]}
+*Mobile:* ${userInputData.inputs[2]}
     
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -322,6 +326,7 @@ const submitDetails = async (chatId, messageId) => {
           
 *Name:* ${userInputData.inputs[0]}
 *Mobile:* ${userInputData.inputs[1]}
+*Email:* ${userInputData.inputs[2]}
           
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -346,10 +351,7 @@ const submitDetails = async (chatId, messageId) => {
 \>*Name\\: ${userInputData.agentDetails.sa_name}*
 \>*Mobile\\: \\${userInputData.agentDetails.sa_contact}*
 
-*Our customer support agent will contact you soon 🤙*
-
-_For immediate response, click on *Chat on WA*_
-
+*Our customer support agent will contact you soon🤙*
 *Have a great day 😊*
 
 `
@@ -366,7 +368,9 @@ _For immediate response, click on *Chat on WA*_
  // Send user info to the server;
     ]);
     await editMessage(chatId, sucMsg, init.message_id, reply_markup, 'MarkdownV2')
-    
+
+      
+      
 
 }
 
@@ -377,4 +381,5 @@ module.exports = {
     handleUserInputs,
     showConfirmation,
     submitDetails,
+    sendTNservicesMenu
 }

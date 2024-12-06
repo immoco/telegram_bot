@@ -53,6 +53,8 @@ app.post(WEBHOOK, async (req, res) => {
     return res.send();
 })
 
+app.get(`${WEBHOOK}/getWebhookInfo`)
+
 app.listen(process.env.PORT || 3001, async () => {
     console.log('Server is running:', process.env.PORT || 3001);
     init();

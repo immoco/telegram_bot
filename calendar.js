@@ -1,7 +1,6 @@
 const {sendMessage, editMessage, deleteMessage, botStatus} = require('./message');
 const {getSession, setSession, certificatesCache} = require('./cache');
 const {showConfirmation} = require('./userinteraction');
-const e = require('cors');
 
 
 function getDateKeyboard(year, month, isNextMonth) {

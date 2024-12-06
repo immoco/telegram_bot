@@ -2,7 +2,7 @@
 const NodeCache = require("node-cache");
 const certificatesCache = new NodeCache({ stdTTL: 10000 });
 const servicesCache = new NodeCache({ stdTTL: 10000 });
-
+const townCache = new NodeCache({ stdTTL: 10000 });
 const sessionCache = new NodeCache({ stdTTL: 10000}); // 5 min TTL, checks every minute
 
 module.exports = {
@@ -11,5 +11,6 @@ module.exports = {
     deleteSession: (chatId) => sessionCache.del(chatId),
     flushAllSessions: () => sessionCache.flushAll(), // Clears all sessions (if needed),
     certificatesCache,
-    servicesCache
+    servicesCache,
+    townCache
 };

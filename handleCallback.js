@@ -42,13 +42,12 @@ async function handleCallbackQuery(callback_query, callBackData, chat_id, messag
     }
     else if (callBackData.toString().startsWith('service_')){
       let services, code;
-      if (servicesCache.get('voterid_services')) {
+      code=callBackData.toString().split('_')[1]
+      if (code='vot') {
         services = servicesCache.get('voterid_services');
-        code='vot';
       }
-      else {
+      else if(code='aad') {
         services = servicesCache.get('aadhar_services');
-        code='aad';
       }
       console.log(services)
       for (const service of services) {

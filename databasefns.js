@@ -75,11 +75,12 @@ const sendCertificatesMenu = async (chatId, callBackData) => {
       } else if (callBackData === 'voter_id') {
             // Fetch the certificates
             let services = servicesCache.get("voterid_services");
+            console.log('Before Choosing the services', services)
             if (!services) {
               services = await fetchCertificates('voter_id');
               servicesCache.set("voterid_services", services);
             }
-            
+            console.log('After Choosing the services', services)
             // Generate inline keyboard buttons
             const inlineKeyboard = services.map((service) => [
               {
@@ -94,10 +95,12 @@ const sendCertificatesMenu = async (chatId, callBackData) => {
       } else if (callBackData === 'aadhar_services') {
         // Fetch the certificates
         let services = servicesCache.get("aadhar_services");
+        console.log('Before Choosing the services', services)
         if (!services) {
           services = await fetchCertificates('aadhar_services');
-          servicesCache.set("aadhar_services", services);
+          servicesCache.set("aadharcard_services", services);
         }
+        console.log(servicesCache.get("aadharcard_services"))
         
         // Generate inline keyboard buttons
         const inlineKeyboard = services.map((service) => [

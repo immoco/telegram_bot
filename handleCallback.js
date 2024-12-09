@@ -43,14 +43,15 @@ async function handleCallbackQuery(callback_query, callBackData, chat_id, messag
     else if (callBackData.toString().startsWith('service_')){
       let services, code;
       code=callBackData.toString().split('_')[1]
-      if (code='vot') {
-        services = servicesCache.get('voterid_services');
+      console.log(code)
+      if (code === 'vot') {
+        services = 'voterid_services';
       }
-      else if(code='aad') {
-        services = servicesCache.get('aadhar_services');
+      else if(code === 'aad') {
+        services = 'aadharcard_services';
       }
       console.log(services)
-      for (const service of services) {
+      for (const service of servicesCache.get(services)) {
         if (callBackData === `service_${code}_${service.id}`) {
             await sendReqDocsandFee(chat_id, service);
         }
@@ -60,8 +61,8 @@ async function handleCallbackQuery(callback_query, callBackData, chat_id, messag
     else if (callBackData.toString() === 'handle_cancel'){
       await handleCancel(chat_id, callback_query);
     }
-    else if (callBackData.toString() === 'handle_proceed'){
-        await handleProceed(chat_id, callback_query);
+    else if (callBackData.toString().startsWith('handle_proceed')){
+        await handleProceed(chat_id, callback_query, callBackData);
     }
     else if (callBackData.toString() === 'urgent_yes'){
       await showConfirmation(chat_id, true, messageId);

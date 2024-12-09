@@ -85,42 +85,60 @@ const handleCancel = async (chatId, callbackQuery) => {
     }
 };
 
-const handleProceed = async (chatId, callbackQuery) => {
+const handleProceed = async (chatId, callbackQuery, callback_data) => {
     try {
-        const certificates = certificatesCache.get('certificates'); // Retrieve the stored certificates
-        let services;
-        if (servicesCache.get('voterid_services')) {services = servicesCache.get('voterid_services')}
-        else services = servicesCache.get('aadhar_services')
+      //Find the type of services
+        const type_code=callback_data.toString().split('_')[2]
+        console.log(type_code)
+        let currentServices;
+        let currentService;
 
-        if (!certificates && !services) {
+        switch (type_code) {
+          case 'certificates':
+            currentServices=certificatesCache.get('certificates');
+            // Find the certificate that was selected based on callback data
+            const selectedCertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
+            currentService = currentServices.find(certificate => certificate.id === selectedCertId);
+
+            setSession(chatId, {
+              certificate: currentService.data.certificate_name,
+              cer_code: currentService.data.certificate_code,
+              input_state: false,
+            });
+            console.log(getSession(chatId));
+            break;
+          case 'vot':
+            currentServices = servicesCache.get('voterid_services');
+            // Find the certificate that was selected based on callback data
+            const selectedVotSertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
+            currentService = currentServices.find(certificate => certificate.id === selectedVotSertId);
+
+            setSession(chatId, {
+              certificate: currentService.data.service_name,
+              input_state: false,
+            });
+            console.log(getSession(chatId));
+            break;
+          case 'aad':
+            currentServices = servicesCache.get('aadharcard_services');
+            const selectedAadSertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
+            currentService = currentServices.find(certificate => certificate.id === selectedAadSertId);
+  
+            setSession(chatId, {
+              certificate: currentService.data.service_name,
+              input_state: false,
+            });
+            console.log(getSession(chatId));
+            break;
+          default:
+            break;
+        }
+
+        if (!currentServices) {
           console.log("No certificates found in the cache.");
           await botStatus(chatId, 'typing');
           sendMessage(chatId, 'Please restart the bot');
           return;
-        }
-        let currentService;
-
-        if (certificates) {
-          // Find the certificate that was selected based on callback data
-          const selectedCertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
-          currentService = certificates.find(certificate => certificate.id === selectedCertId);
-
-          setSession(chatId, {
-            certificate: currentService.data.certificate_name,
-            cer_code: currentService.data.certificate_code,
-            input_state: false,
-          });
-          console.log(getSession(chatId));
-        } else if (services) {
-          // Find the certificate that was selected based on callback data
-          const selectedSertId = callbackQuery.message.text.split('\n')[0]; // Assuming certificate ID is in the callback data
-          currentService = services.find(certificate => certificate.id === selectedSertId);
-
-          setSession(chatId, {
-            certificate: currentService.data.service_name,
-            input_state: false,
-          });
-          console.log(getSession(chatId));
         }
 
         const reqDocs = currentService.data.required_docs.map((doc) => doc.trim()).join('\n');
@@ -176,22 +194,10 @@ const handleUserInputs = async (...args) => {
               userSession.step = 3;
               await botStatus(chatId, 'typing');
               await Promise.all([
-                sendMessage(chatId, "*And your email for updates? 📬*", '', 'Markdown')//,botStatus(chatId, 'typing')
+                sendMessage(chatId, "*Lastly, the mobile number for contact? 📞*", '', 'Markdown')//,botStatus(chatId, 'typing')
               ])
               setSession(chatId, userSession);
           } else if (userSession.step === 3) {
-
-              const validMail= await validateEmail(chatId, message.text)
-              if (validMail) {
-                userSession.inputs.push(validMail);
-                userSession.step = 4;
-                await botStatus(chatId, 'typing');
-                await Promise.all([
-                  sendMessage(chatId, "*Lastly, the mobile number for contact? 📞*", '', 'Markdown')//,botStatus(chatId, 'typing')
-                ])
-                setSession(chatId, userSession);
-              }
-          } else if (userSession.step === 4) {
               const validMobile = await validateMobile(chatId, message.text);
               if (validMobile) {
                 userSession.inputs.push(validMobile);
@@ -233,8 +239,7 @@ try {
       ...userInputData,
       urgent_state: urgent_status ? true:false,
       name: userInputData.inputs[0],
-      mobile: userInputData.inputs[2],
-      email: userInputData.inputs[1]
+      mobile: userInputData.inputs[1],
     }
     setSession(chatId, userInputData);
     let msgText;
@@ -244,8 +249,7 @@ try {
 *Application Summary*
       
 *Name:* ${userInputData.inputs[0]}
-*Email:* ${userInputData.inputs[1]}
-*Mobile:* ${userInputData.inputs[2]}
+*Mobile:* ${userInputData.inputs[1]}
       
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -256,7 +260,6 @@ try {
             
 *Name:* ${userInputData.inputs[0]}
 *Mobile:* ${userInputData.inputs[1]}
-*Email:* ${userInputData.inputs[2]}
             
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -314,8 +317,7 @@ const submitDetails = async (chatId, messageId) => {
 *Application Summary*
     
 *Name:* ${userInputData.inputs[0]}
-*Email:* ${userInputData.inputs[1]}
-*Mobile:* ${userInputData.inputs[2]}
+*Mobile:* ${userInputData.inputs[1]}
     
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
@@ -326,7 +328,6 @@ const submitDetails = async (chatId, messageId) => {
           
 *Name:* ${userInputData.inputs[0]}
 *Mobile:* ${userInputData.inputs[1]}
-*Email:* ${userInputData.inputs[2]}
           
 *${userInputData.cer_code ? 'Certificate' : 'Service'}:* ${userInputData.certificate}
 *Urgent Requirement:* ${userInputData.urgent_state ? 'Yes' : 'No'}
